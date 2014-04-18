@@ -87,7 +87,11 @@ public abstract class Block {
 		Set<Class<? extends Block>> allClasses = reflections.getSubTypesOf(Block.class);
 		List<Class<? extends Block>> classes = new ArrayList<Class<? extends Block>>(allClasses);
 		Class<? extends Block> blockClass = classes.get(randomNumber(0, classes.size()));
-		return blockClass.newInstance();
+		Block block = blockClass.newInstance();
+		for (int i = 0; i < randomNumber(1, 5); i++) {
+			block.setMatrix(block.rotate());
+		}
+		return block;
 	}
 	
 	private static int randomNumber(int from, int to) {

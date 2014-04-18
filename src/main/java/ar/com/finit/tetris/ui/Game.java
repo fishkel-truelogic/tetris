@@ -3,6 +3,8 @@ package ar.com.finit.tetris.ui;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Toolkit;
@@ -27,29 +29,46 @@ public class Game extends JPanel implements ActionListener {
 	public static final int GAME_WIDTH = 10 * Block.PIXEL_SIZE;
 
 	public static final int GAME_HEIGHT = 22 * Block.PIXEL_SIZE;
-	
+
 	private int speed = 1000;
 
 	private Timer timer;
-	
+
 	private Block block;
 
 	private Image[][] lines;
 
 	private SideBar sideBar;
-	
-	
+
+	private boolean pause;
+
 	@Override
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
-		paintLines(g);
-		paintShadow(g);
-		paintBlock(g);
+
+		if (!pause) {
+			paintLines(g);
+			paintShadow(g);
+			paintBlock(g);
+			timer.start();
+		} else {
+			paintPause(g);
+		}
+
 		Toolkit.getDefaultToolkit().sync();
 		g.dispose();
-		timer.start();
 	}
-	
+
+	private void paintPause(Graphics g) {
+		String msg = "-- PAUSE --";
+		Font small = new Font("Helvetica", Font.BOLD, 14);
+		FontMetrics metr = getFontMetrics(small);
+		g.setColor(Color.white);
+		g.setFont(small);
+		g.drawString(msg, (GAME_WIDTH - metr.stringWidth(msg)) / 2, GAME_HEIGHT / 2 - 2 * Block.PIXEL_SIZE);
+
+	}
+
 	private void paintShadow(Graphics g) {
 		int x = 0;
 		int y = 0;
@@ -77,7 +96,7 @@ public class Game extends JPanel implements ActionListener {
 				g.drawImage(lines[i][j], x, y, this);
 			}
 		}
-		
+
 	}
 
 	private void paintBlock(Graphics g) {
@@ -98,7 +117,7 @@ public class Game extends JPanel implements ActionListener {
 		boolean isLine = true;
 		for (int i = 21; i >= 0; i--) {
 			isLine = true;
-			for (int j = 0; j < 10; j ++) {
+			for (int j = 0; j < 10; j++) {
 				if (lines[i][j] == null) {
 					isLine = false;
 					break;
@@ -137,7 +156,7 @@ public class Game extends JPanel implements ActionListener {
 		}
 		repaint();
 	}
-	
+
 	private void nextBlock() {
 		block = sideBar.getNext();
 		sideBar.setNext(sideBar.nextBlock());
@@ -152,11 +171,11 @@ public class Game extends JPanel implements ActionListener {
 		addKeyListener(new TetrisKeyListener(this));
 		setBackground(Color.BLACK);
 		setPreferredSize(new Dimension(Game.GAME_WIDTH + 1, Game.GAME_HEIGHT + 41));
-        setFocusable(true);
+		setFocusable(true);
 		timer = new Timer(speed, this);
 		timer.start();
 	}
-	
+
 	private Image[][] initializeLines() {
 		Image[][] ret = new Image[22][10];
 		for (int i = 0; i < 20; i++) {
@@ -168,41 +187,42 @@ public class Game extends JPanel implements ActionListener {
 	}
 
 	private class TetrisKeyListener extends KeyAdapter {
-		
+
 		private static final int SPACE_BAR = 32;
-		private static final int LEFT_SHIFT = 16;
+		private static final int SHIFT = 16;
 		private Game game;
-		
+
 		public TetrisKeyListener(Game game) {
 			this.game = game;
 		}
 
 		@Override
 		public void keyPressed(KeyEvent e) {
-			 int key = e.getKeyCode();
+			int key = e.getKeyCode();
 
-			if (key == KeyEvent.VK_LEFT) {
-				game.onKeyLeft();
-			}
+			if (key == KeyEvent.VK_ENTER) {
+				game.pauseUnpause();
+			} else {
+				if (game.isPause())
+					game.pauseUnpause();
 
-			if (key == KeyEvent.VK_RIGHT) {
-				game.onKeyRight();
-			}
+				if (key == KeyEvent.VK_LEFT)
+					game.onKeyLeft();
 
-			if (key == KeyEvent.VK_UP) {
-				game.onKeyUp();
-			}
+				if (key == KeyEvent.VK_RIGHT)
+					game.onKeyRight();
 
-			if (key == KeyEvent.VK_DOWN) {
-				game.onKeyDown();
-            }
+				if (key == KeyEvent.VK_UP)
+					game.onKeyUp();
 
-			if (key == SPACE_BAR) {
-				game.onKeySpaceBar();
-			}
+				if (key == KeyEvent.VK_DOWN)
+					game.onKeyDown();
 
-			if (key == LEFT_SHIFT) {
-				game.onKeyLeftShift();
+				if (key == SPACE_BAR)
+					game.onKeySpaceBar();
+
+				if (key == SHIFT)
+					game.onKeyShift();
 			}
 		}
 	}
@@ -215,10 +235,20 @@ public class Game extends JPanel implements ActionListener {
 		repaint();
 	}
 
-	public void onKeyLeftShift() {
+	public void pauseUnpause() {
+		if (pause) {
+			timer.start();
+		} else {
+			timer.stop();
+		}
+		pause = !pause;
+		repaint();
+	}
+
+	public void onKeyShift() {
 		timer.stop();
-		if (sideBar.getHold() != null) { 
-			if(!sideBar.isLockHold()) {
+		if (sideBar.getHold() != null) {
+			if (!sideBar.isLockHold()) {
 				sideBar.setHoldBuffer(new HoldBlock(block.getMatrixLength(), block.getMatrix(), block.getColor()));
 				block = sideBar.getHold();
 				sideBar.setHold(sideBar.getHoldBuffer());
@@ -249,7 +279,7 @@ public class Game extends JPanel implements ActionListener {
 		block.setShadowY(block.getY());
 		if (canMoveDown()) {
 			block.moveDown();
-		} 
+		}
 		repaint();
 	}
 
@@ -269,20 +299,120 @@ public class Game extends JPanel implements ActionListener {
 			for (int j = 0; j < block.getMatrixLength(); j++) {
 				if (rotated[i][j]) {
 					if (block.getX() + j * Block.PIXEL_SIZE < 0) {
-						return false;
+						return forceFitsLeft(rotated);
 					}
 					if (block.getX() + j * Block.PIXEL_SIZE > 160) {
-						return false;
+						return forceFitsRight(rotated);
 					}
-					y = ((block.getY() + i * Block.PIXEL_SIZE) / Block.PIXEL_SIZE);
+					y = block.getY() / Block.PIXEL_SIZE + i;
 					x = (block.getX() / Block.PIXEL_SIZE) + j + 1;
 					if (lines[y][x] != null) {
+						if (linesAreDown(x, y)) {
+							return forceFitsDown(rotated);
+						} else {
+							return false;
+						}
+					}
+				}
+			}
+		}
+		return true;
+	}
+
+
+	private boolean linesAreDown(int x, int y) {
+		for (int i = 0; i < block.getMatrixLength(); i++) {
+			for (int j = 0; j < block.getMatrixLength(); j++) {
+				if (block.getMatrix()[i][j]) {
+					if (y < block.getY() / Block.PIXEL_SIZE + i) {
 						return false;
 					}
 				}
 			}
 		}
 		return true;
+	}
+
+	private boolean forceFitsDown(boolean[][] rotated) {
+		int y = block.getY();
+		int x = block.getX();
+		boolean fits = false;
+		while (!fits) {
+			fits = true;
+			y -= Block.PIXEL_SIZE;
+			for (int i = 0; i < block.getMatrixLength(); i++) {
+				for (int j = 0; j < block.getMatrixLength(); j++) {
+					if (rotated[i][j]) {
+						int yy = ((y + i * Block.PIXEL_SIZE) / Block.PIXEL_SIZE);
+						int xx = (x / Block.PIXEL_SIZE) + j + 1;
+						if (lines[yy][xx] != null) {
+							fits = false;
+						}
+					}
+				}
+			}
+		}
+		if (fits) {
+			block.setY(y + Block.PIXEL_SIZE);
+			block.setShadowY(y + Block.PIXEL_SIZE);
+		}
+		return fits;
+	}
+
+	private boolean forceFitsRight(boolean[][] rotated) {
+		int x = block.getX();
+		boolean fits = false;
+		while (block.getX() + block.getMatrixLength() * Block.PIXEL_SIZE  > 160 && !fits) {
+			fits = true;
+			x -= Block.PIXEL_SIZE;
+			for (int i = 0; i < block.getMatrixLength(); i++) {
+				for (int j = 0; j < block.getMatrixLength(); j++) {
+					if (rotated[i][j]) {
+						if (x + j * Block.PIXEL_SIZE > 160) {
+							fits = false;
+						}
+						int y = ((block.getY() + i * Block.PIXEL_SIZE) / Block.PIXEL_SIZE);
+						int xx = (x / Block.PIXEL_SIZE) + j + 1;
+						if (lines[y][xx] != null) {
+							return false;
+						}
+					}
+				}
+			}
+		}
+		if (fits) {
+			block.setX(x);
+			block.setShadowX(x);
+		}
+		return fits;
+	}
+
+	private boolean forceFitsLeft(boolean[][] rotated) {
+		int x = block.getX();
+		boolean fits = false;
+		while (block.getX() < 0 && !fits) {
+			fits = true;
+			x += Block.PIXEL_SIZE;
+			for (int i = 0; i < block.getMatrixLength(); i++) {
+				for (int j = 0; j < block.getMatrixLength(); j++) {
+					if (rotated[i][j]) {
+						if (x + j * Block.PIXEL_SIZE < 0) {
+							fits = false;
+						}
+						int y = ((block.getY() + i * Block.PIXEL_SIZE) / Block.PIXEL_SIZE);
+						int xx = (x / Block.PIXEL_SIZE) + j + 1;
+						if (lines[y][xx] != null) {
+							return false;
+						}
+					}
+				}
+			}
+		}
+		if (fits) {
+			block.setX(x - Block.PIXEL_SIZE);
+			block.setShadowX(x - Block.PIXEL_SIZE);
+		}
+		return fits;
 	}
 
 	public void onKeyRight() {
@@ -304,7 +434,7 @@ public class Game extends JPanel implements ActionListener {
 					}
 					y = ((block.getY() + i * Block.PIXEL_SIZE) / Block.PIXEL_SIZE) - 1;
 					x = (block.getX() / Block.PIXEL_SIZE) + j;
-					if (x >= 0 && y >= 0 ) {
+					if (x >= 0 && y >= 0) {
 						if (lines[y][x] != null) {
 							return false;
 						}
@@ -314,7 +444,7 @@ public class Game extends JPanel implements ActionListener {
 		}
 		return true;
 	}
-	
+
 	private boolean canMoveRight() {
 		int x = 0;
 		int y = 0;
@@ -324,9 +454,9 @@ public class Game extends JPanel implements ActionListener {
 					if (block.getX() + j * Block.PIXEL_SIZE >= 160) {
 						return false;
 					}
-					y = ((block.getY() + i * Block.PIXEL_SIZE) / Block.PIXEL_SIZE) -1;
+					y = ((block.getY() + i * Block.PIXEL_SIZE) / Block.PIXEL_SIZE) - 1;
 					x = (block.getX() / Block.PIXEL_SIZE) + j + 2;
-					if (x >= 0 && y >= 0 ) {
+					if (x >= 0 && y >= 0) {
 						if (lines[y][x] != null) {
 							return false;
 						}
@@ -348,7 +478,7 @@ public class Game extends JPanel implements ActionListener {
 					}
 					y = ((block.getY() + i * Block.PIXEL_SIZE) / Block.PIXEL_SIZE);
 					x = (block.getX() / Block.PIXEL_SIZE) + j + 1;
-					if (x >= 0 && y >= 0 ) {
+					if (x >= 0 && y >= 0) {
 						if (lines[y][x] != null) {
 							return false;
 						}
@@ -358,6 +488,7 @@ public class Game extends JPanel implements ActionListener {
 		}
 		return true;
 	}
+
 	private boolean canShadowMoveDown() {
 		int x = 0;
 		int y = 0;
@@ -369,7 +500,7 @@ public class Game extends JPanel implements ActionListener {
 					}
 					y = ((block.getShadowY() + i * Block.PIXEL_SIZE) / Block.PIXEL_SIZE);
 					x = (block.getShadowX() / Block.PIXEL_SIZE) + j + 1;
-					if (x >= 0 && y >= 0 ) {
+					if (x >= 0 && y >= 0) {
 						if (lines[y][x] != null) {
 							return false;
 						}
@@ -394,4 +525,13 @@ public class Game extends JPanel implements ActionListener {
 		}
 		sideBar.setLockHold(false);
 	}
+
+	public boolean isPause() {
+		return pause;
+	}
+
+	public void setPause(boolean pause) {
+		this.pause = pause;
+	}
+
 }

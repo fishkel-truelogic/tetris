@@ -124,7 +124,7 @@ public class SideBar extends JPanel {
 
 	public Block nextBlock() {
 		try {
-			return Block.getRandomBlock();
+			return Block.getRandomBlock(); 
 		} catch (InstantiationException e) {
 			throw new RuntimeException(e);
 		} catch (IllegalAccessException e) {
