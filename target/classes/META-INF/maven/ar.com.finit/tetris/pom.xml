@@ -4,7 +4,7 @@
 
 	<groupId>ar.com.finit</groupId>
 	<artifactId>tetris</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0</version>
 	<packaging>jar</packaging>
 
 	<name>tetris</name>
@@ -26,5 +26,72 @@
 			<artifactId>reflections</artifactId>
 			<version>0.9.9-RC1</version>
 		</dependency>
+
+
 	</dependencies>
+
+	<build>
+		<plugins>
+
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>ar.com.finit.tetris.App</mainClass>
+						</manifest>
+					</archive>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+				</configuration>
+			</plugin>
+
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.1</version>
+				<executions>
+					<execution>
+						<phase>test</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<tasks>
+								<echo>Using env.test.properties</echo>
+								<copy file="red.png" tofile="${basedir}/target/red.png" />
+								<copy file="blue.png" tofile="${basedir}/target/blue.png" />
+								<copy file="purple.png" tofile="${basedir}/target/purple.png" />
+								<copy file="orange.png" tofile="${basedir}/target/orange.png" />
+								<copy file="green.png" tofile="${basedir}/target/green.png" />
+								<copy file="lightBlue.png" tofile="${basedir}/target/lightBlue.png" />
+								<copy file="grey.png" tofile="${basedir}/target/grey.png" />
+								<copy file="yellow.png" tofile="${basedir}/target/yellow.png" />
+							</tasks>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+
+		</plugins>
+	</build>
 </project>

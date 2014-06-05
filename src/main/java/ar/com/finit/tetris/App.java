@@ -2,6 +2,7 @@ package ar.com.finit.tetris;
 
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.io.IOException;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -17,7 +18,7 @@ public class App extends JFrame {
 
 	private static final long serialVersionUID = -4105406273868764193L;
 
-	public App() {
+	public App() throws IOException {
 		JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 0));
 		SideBar sideBar = new SideBar();
 		panel.setVisible(true);
@@ -35,8 +36,13 @@ public class App extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 
 			public void run() {
-				JFrame frame = new App();
-				frame.setVisible(true);
+				JFrame frame;
+				try {
+					frame = new App();
+					frame.setVisible(true);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
 			}
 			
 		});

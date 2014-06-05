@@ -12,10 +12,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 
+import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import ar.com.finit.tetris.lan.LanConnection;
 import ar.com.finit.tetris.ui.blocks.Block;
 import ar.com.finit.tetris.ui.blocks.special.HoldBlock;
 
@@ -30,6 +33,10 @@ public class Game extends JPanel implements ActionListener {
 
 	public static final int GAME_HEIGHT = 22 * Block.PIXEL_SIZE;
 
+	private static final String HOST = "192.168.1.84";
+
+	private static final int PORT = 8888;
+
 	private int speed = 1000;
 
 	private Timer timer;
@@ -41,6 +48,8 @@ public class Game extends JPanel implements ActionListener {
 	private SideBar sideBar;
 
 	private boolean pause;
+
+	private LanConnection lanConnection;
 
 	@Override
 	public void paintComponent(Graphics g) {
@@ -65,7 +74,8 @@ public class Game extends JPanel implements ActionListener {
 		FontMetrics metr = getFontMetrics(small);
 		g.setColor(Color.white);
 		g.setFont(small);
-		g.drawString(msg, (GAME_WIDTH - metr.stringWidth(msg)) / 2, GAME_HEIGHT / 2 - 2 * Block.PIXEL_SIZE);
+		g.drawString(msg, (GAME_WIDTH - metr.stringWidth(msg)) / 2, GAME_HEIGHT
+				/ 2 - 2 * Block.PIXEL_SIZE);
 
 	}
 
@@ -124,6 +134,7 @@ public class Game extends JPanel implements ActionListener {
 				}
 			}
 			if (isLine) {
+				lanConnection.sendLine();
 				sideBar.setPoints(sideBar.getPoints() + 10);
 				if (sideBar.getPoints() % 100 == 0) {
 					sideBar.setLevel(sideBar.getLevel() + 1);
@@ -154,7 +165,26 @@ public class Game extends JPanel implements ActionListener {
 			clearLines();
 			nextBlock();
 		}
+
+		addGarbageLines(lanConnection.readLine());
+
 		repaint();
+	}
+
+	public void addGarbageLines(int linesSent) {
+		ImageIcon icon = new ImageIcon("grey.png");
+		
+		Image greyImage = icon.getImage();
+		for (int i = 21; i >= 0; i--) {
+			for (int j = 0; j < 10; j++) {
+				lines[i - linesSent][j] = lines[i][j];
+			}
+		}
+		for (int k = 21; k > 21 - linesSent; k --) {
+			for (int j = 0; j < 10; j++) {
+				lines[k][j] =  greyImage;
+			}
+		}
 	}
 
 	private void nextBlock() {
@@ -163,14 +193,16 @@ public class Game extends JPanel implements ActionListener {
 		sideBar.repaint();
 	}
 
-	public Game(SideBar sideBar) {
+	public Game(SideBar sideBar) throws IOException {
 		super(new FlowLayout(FlowLayout.LEFT));
+		this.lanConnection = new LanConnection(HOST, PORT);
 		lines = initializeLines();
 		this.sideBar = sideBar;
 		nextBlock();
 		addKeyListener(new TetrisKeyListener(this));
 		setBackground(Color.BLACK);
-		setPreferredSize(new Dimension(Game.GAME_WIDTH + 1, Game.GAME_HEIGHT + 41));
+		setPreferredSize(new Dimension(Game.GAME_WIDTH + 1,
+				Game.GAME_HEIGHT + 41));
 		setFocusable(true);
 		timer = new Timer(speed, this);
 		timer.start();
@@ -249,12 +281,14 @@ public class Game extends JPanel implements ActionListener {
 		timer.stop();
 		if (sideBar.getHold() != null) {
 			if (!sideBar.isLockHold()) {
-				sideBar.setHoldBuffer(new HoldBlock(block.getMatrixLength(), block.getMatrix(), block.getColor()));
+				sideBar.setHoldBuffer(new HoldBlock(block.getMatrixLength(),
+						block.getMatrix(), block.getColor()));
 				block = sideBar.getHold();
 				sideBar.setHold(sideBar.getHoldBuffer());
 			}
 		} else {
-			sideBar.setHold(new HoldBlock(block.getMatrixLength(), block.getMatrix(), block.getColor()));
+			sideBar.setHold(new HoldBlock(block.getMatrixLength(), block
+					.getMatrix(), block.getColor()));
 			nextBlock();
 		}
 		sideBar.setLockHold(true);
@@ -319,7 +353,6 @@ public class Game extends JPanel implements ActionListener {
 		return true;
 	}
 
-
 	private boolean linesAreDown(int x, int y) {
 		for (int i = 0; i < block.getMatrixLength(); i++) {
 			for (int j = 0; j < block.getMatrixLength(); j++) {
@@ -362,7 +395,8 @@ public class Game extends JPanel implements ActionListener {
 	private boolean forceFitsRight(boolean[][] rotated) {
 		int x = block.getX();
 		boolean fits = false;
-		while (block.getX() + block.getMatrixLength() * Block.PIXEL_SIZE  > 160 && !fits) {
+		while (block.getX() + block.getMatrixLength() * Block.PIXEL_SIZE > 160
+				&& !fits) {
 			fits = true;
 			x -= Block.PIXEL_SIZE;
 			for (int i = 0; i < block.getMatrixLength(); i++) {
