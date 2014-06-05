@@ -19,38 +19,51 @@ public class LanConnection {
 	private BufferedReader in;
 	
 	public LanConnection(String ip, int port) throws IOException {
-		
-		boolean connectionError = false;
-		
+		startServer(port);
+		startSocket(ip, port);
+		startInOut();
+	}
+	
+	private void startInOut() {
 		try {
-			this.clientSocket = new Socket(ip, port);
-		} catch (UnknownHostException e) {
-			connectionError = true;
-			clientSocket = null;
-			throw new RuntimeException(e);
-		} catch (IOException e) {
-			connectionError = true;
-			clientSocket = null;
-			throw new RuntimeException(e);
-		}
-		
-		if (connectionError) {
-			try {
-				this.serverSocket = new ServerSocket(port);
-				clientSocket = serverSocket.accept();
-				out = new DataOutputStream(clientSocket.getOutputStream());
-				in = new BufferedReader(new InputStreamReader(
-						clientSocket.getInputStream()));
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		} else {
-			out = new DataOutputStream(clientSocket.getOutputStream());
+		out = new DataOutputStream(clientSocket.getOutputStream());
 			in = new BufferedReader(new InputStreamReader(
 					clientSocket.getInputStream()));
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		
 	}
+	private void startSocket(String ip, int port) {
+		boolean error = false;
+		try {
+			this.clientSocket = new Socket(ip, port);
+		} catch (UnknownHostException e) {
+			error = true;
+			e.printStackTrace();
+		} catch (IOException e) {
+			error = true;
+			e.printStackTrace();
+		}
+		
+		if (error) {
+			try {
+				clientSocket = serverSocket.accept();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	private void startServer(int port) {
+		try {
+			this.serverSocket = new ServerSocket(port);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
 	public void sendLine() {
 		try {
 			if (clientSocket != null) {
