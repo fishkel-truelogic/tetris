@@ -12,13 +12,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.Socket;
 
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
-import ar.com.finit.tetris.lan.LanConnection;
+import ar.com.finit.tetris.lan.Da;
 import ar.com.finit.tetris.ui.blocks.Block;
 import ar.com.finit.tetris.ui.blocks.special.HoldBlock;
 
@@ -49,7 +51,8 @@ public class Game extends JPanel implements ActionListener {
 
 	private boolean pause;
 
-	private LanConnection lanConnection;
+	private DataOutputStream out;
+
 
 	@Override
 	public void paintComponent(Graphics g) {
@@ -134,7 +137,13 @@ public class Game extends JPanel implements ActionListener {
 				}
 			}
 			if (isLine) {
-				lanConnection.sendLine();
+				byte[] buf = ("l;"+ "\n").getBytes();
+				try {
+					out.write(buf);
+					out.flush();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 				sideBar.setPoints(sideBar.getPoints() + 10);
 				if (sideBar.getPoints() % 100 == 0) {
 					sideBar.setLevel(sideBar.getLevel() + 1);
@@ -166,8 +175,6 @@ public class Game extends JPanel implements ActionListener {
 			nextBlock();
 		}
 
-		addGarbageLines(lanConnection.readLine());
-
 		repaint();
 	}
 
@@ -193,9 +200,13 @@ public class Game extends JPanel implements ActionListener {
 		sideBar.repaint();
 	}
 
-	public Game(SideBar sideBar) throws IOException {
+	public Game(SideBar sideBar, Socket client) throws IOException {
 		super(new FlowLayout(FlowLayout.LEFT));
-		this.lanConnection = new LanConnection(HOST, PORT);
+		Da daClient = new Da(client, this);
+		daClient.start();
+
+		out = new DataOutputStream(client.getOutputStream());
+		
 		lines = initializeLines();
 		this.sideBar = sideBar;
 		nextBlock();
