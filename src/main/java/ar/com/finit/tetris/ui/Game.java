@@ -14,7 +14,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.Socket;
 
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
@@ -35,9 +34,9 @@ public class Game extends JPanel implements ActionListener {
 
 	public static final int GAME_HEIGHT = 22 * Block.PIXEL_SIZE;
 
-	private static final String HOST = "192.168.1.84";
+	// private static final String HOST = "192.168.1.84";
 
-	private static final int PORT = 8888;
+	// private static final int PORT = 8888;
 
 	private int speed = 1000;
 
@@ -137,7 +136,7 @@ public class Game extends JPanel implements ActionListener {
 				}
 			}
 			if (isLine) {
-				byte[] buf = ("l;"+ "\n").getBytes();
+				byte[] buf = (";" + "\n").getBytes();
 				try {
 					out.write(buf);
 					out.flush();
@@ -178,20 +177,24 @@ public class Game extends JPanel implements ActionListener {
 		repaint();
 	}
 
-	public void addGarbageLines(int linesSent) {
+	public void addGarbageLine() {
 		ImageIcon icon = new ImageIcon("grey.png");
-		
+
 		Image greyImage = icon.getImage();
-		for (int i = 21; i >= 0; i--) {
+		for (int i = 1; i <= 21; i++) {
 			for (int j = 0; j < 10; j++) {
-				lines[i - linesSent][j] = lines[i][j];
+				lines[i - 1][j] = lines[i][j];
 			}
 		}
-		for (int k = 21; k > 21 - linesSent; k --) {
-			for (int j = 0; j < 10; j++) {
-				lines[k][j] =  greyImage;
-			}
+		for (int j = 0; j < 10; j++) {
+			if (randomBoolean())
+				lines[21][j] = greyImage;
 		}
+		repaint();
+	}
+
+	private boolean randomBoolean() {
+		 return Math.random() < 0.5;
 	}
 
 	private void nextBlock() {
@@ -200,13 +203,12 @@ public class Game extends JPanel implements ActionListener {
 		sideBar.repaint();
 	}
 
-	public Game(SideBar sideBar, Socket client) throws IOException {
+	public Game(SideBar sideBar, String ip, String argServer)
+			throws IOException {
 		super(new FlowLayout(FlowLayout.LEFT));
-		Da daClient = new Da(client, this);
+		Da daClient = new Da(ip, argServer, this);
 		daClient.start();
 
-		out = new DataOutputStream(client.getOutputStream());
-		
 		lines = initializeLines();
 		this.sideBar = sideBar;
 		nextBlock();
@@ -577,6 +579,14 @@ public class Game extends JPanel implements ActionListener {
 
 	public void setPause(boolean pause) {
 		this.pause = pause;
+	}
+
+	public DataOutputStream getOut() {
+		return out;
+	}
+
+	public void setOut(DataOutputStream out) {
+		this.out = out;
 	}
 
 }
