@@ -1,6 +1,7 @@
 package ar.com.finit.tetris.ui.blocks.impl;
 
 import java.awt.Image;
+import java.net.URL;
 
 import javax.swing.ImageIcon;
 
@@ -23,7 +24,8 @@ public class GreenBlock extends Block {
 	@Override
 	public Image getColor() {
 		if (color == null) {
-			ImageIcon i = new ImageIcon("green.png");
+			URL imgURL = getClass().getResource("/green.png");
+			ImageIcon i = new ImageIcon(imgURL);
 			color = i.getImage();
 		}
 		return color;

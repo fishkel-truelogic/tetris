@@ -1,6 +1,7 @@
 package ar.com.finit.tetris.ui.blocks;
 
 import java.awt.Image;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -118,7 +119,8 @@ public abstract class Block {
 
 	public Image getShadowColor() {
 		if (shadowColor == null) {
-			ImageIcon i = new ImageIcon("grey.png");
+			URL imgURL = getClass().getResource("/grey.png");
+			ImageIcon i = new ImageIcon(imgURL);
 			shadowColor = i.getImage();
 		}
 		return shadowColor;
